@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace PeliculasAPI.Entidades
 {
-    public class Genero
+    public class Genero : IId
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }

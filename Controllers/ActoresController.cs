@@ -15,7 +15,7 @@ namespace PeliculasAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ActoresController : ControllerBase
+    public class ActoresController : CustomBaseController
     {
         private readonly ApplicationDBContext _context;
         private readonly IMapper _mapper;
@@ -23,7 +23,7 @@ namespace PeliculasAPI.Controllers
         private const string cacheTag = "actores";
         private readonly IAlmacenadorArchivos _almacenadorArchivos;
         private readonly string contenedor = "actores"; //Nombre del contenedor donde se guardan las fotos
-        public ActoresController(ApplicationDBContext context, IMapper mapper, IOutputCacheStore outputCacheStore,IAlmacenadorArchivos almacenadorArchivos)
+        public ActoresController(ApplicationDBContext context, IMapper mapper, IOutputCacheStore outputCacheStore,IAlmacenadorArchivos almacenadorArchivos) : base(context, mapper,outputCacheStore,cacheTag)
         {
             _context = context;
             _mapper = mapper;
@@ -35,14 +35,7 @@ namespace PeliculasAPI.Controllers
         [OutputCache(Tags = [cacheTag])]
         public async Task<List<ActorDTO>> Get([FromQuery] PaginacionDTO paginacion)
         {
-            var queryable = _context.Actores;
-            await HttpContext.InsertarParametrosPaginacionEnCabecera(queryable); //Insertar en la cabecera la cantidad total de registros
-
-            return await queryable
-                .OrderBy(a => a.Nombre)
-                .Paginar(paginacion)
-                .ProjectTo<ActorDTO>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            return await Get<Actor, ActorDTO>(paginacion, ordenarPor: a => a.Nombre);
         }
 
 
@@ -50,16 +43,7 @@ namespace PeliculasAPI.Controllers
         [OutputCache(Tags = [cacheTag])]
         public async Task<ActionResult<ActorDTO>> Get(int id)
         {
-            var actor = await _context.Actores
-                .ProjectTo<ActorDTO>(_mapper.ConfigurationProvider)
-                .FirstOrDefaultAsync(a => a.Id == id);
-
-            if (actor is null)
-            {
-                return NotFound();
-            }
-
-            return actor;
+            return await Get<Actor, ActorDTO>(id);
         }
 
         [HttpPost]
@@ -76,7 +60,8 @@ namespace PeliculasAPI.Controllers
             _context.Add(actor);
             await _context.SaveChangesAsync();
             await _outputCacheStore.EvictByTagAsync(cacheTag, default); //Eliminar el cache cuando se agrega un nuevo registro
-            return CreatedAtRoute("ObtenerActorPorId", new { id = actor.Id }, actor);
+            var actorDTO = _mapper.Map<ActorDTO>(actor);
+            return CreatedAtRoute("ObtenerActorPorId", new { id = actor.Id }, actorDTO);
         }
 
         [HttpPut("{id:int}")]
@@ -104,15 +89,7 @@ namespace PeliculasAPI.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var registrosBorrados = await _context.Actores.Where(a => a.Id == id).ExecuteDeleteAsync();
-
-            if (registrosBorrados == 0)
-            {
-                return NotFound();
-            }
-
-            await _outputCacheStore.EvictByTagAsync(cacheTag, default);
-            return NoContent();
+            return await Delete<Actor>(id);
         }
     }
 }
