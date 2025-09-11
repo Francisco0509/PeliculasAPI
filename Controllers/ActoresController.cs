@@ -1,11 +1,14 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.EntityFrameworkCore;
 using PeliculasAPI.DBContext;
 using PeliculasAPI.DTOs;
 using PeliculasAPI.Entidades;
 using PeliculasAPI.Servicios;
+using PeliculasAPI.Utilidades;
 using System.Runtime.CompilerServices;
 
 namespace PeliculasAPI.Controllers
@@ -28,10 +31,35 @@ namespace PeliculasAPI.Controllers
             _almacenadorArchivos = almacenadorArchivos;
         }
 
-        [HttpGet("{id:int}", Name = "ObtenerActorPorId")]
-        public void Get(int id)
+        [HttpGet]
+        [OutputCache(Tags = [cacheTag])]
+        public async Task<List<ActorDTO>> Get([FromQuery] PaginacionDTO paginacion)
         {
-            throw new NotImplementedException();
+            var queryable = _context.Actores;
+            await HttpContext.InsertarParametrosPaginacionEnCabecera(queryable); //Insertar en la cabecera la cantidad total de registros
+
+            return await queryable
+                .OrderBy(a => a.Nombre)
+                .Paginar(paginacion)
+                .ProjectTo<ActorDTO>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+        }
+
+
+        [HttpGet("{id:int}", Name = "ObtenerActorPorId")]
+        [OutputCache(Tags = [cacheTag])]
+        public async Task<ActionResult<ActorDTO>> Get(int id)
+        {
+            var actor = await _context.Actores
+                .ProjectTo<ActorDTO>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (actor is null)
+            {
+                return NotFound();
+            }
+
+            return actor;
         }
 
         [HttpPost]
@@ -49,6 +77,42 @@ namespace PeliculasAPI.Controllers
             await _context.SaveChangesAsync();
             await _outputCacheStore.EvictByTagAsync(cacheTag, default); //Eliminar el cache cuando se agrega un nuevo registro
             return CreatedAtRoute("ObtenerActorPorId", new { id = actor.Id }, actor);
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Put(int id, [FromForm] ActorCreacionDTO actorCreacionDTO)
+        {
+            var actor = await _context.Actores.FirstOrDefaultAsync(a => a.Id == id);
+            if (actor is null)
+            {
+                return NotFound();
+            }
+
+            actor = _mapper.Map(actorCreacionDTO, actor);
+
+            if (actorCreacionDTO.Foto is not null)
+            {
+                actor.Foto = await _almacenadorArchivos.Editar(actor.Foto, contenedor, actorCreacionDTO.Foto);
+            }
+
+            await _context.SaveChangesAsync();
+            await _outputCacheStore.EvictByTagAsync(cacheTag, default);
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var registrosBorrados = await _context.Actores.Where(a => a.Id == id).ExecuteDeleteAsync();
+
+            if (registrosBorrados == 0)
+            {
+                return NotFound();
+            }
+
+            await _outputCacheStore.EvictByTagAsync(cacheTag, default);
+            return NoContent();
         }
     }
 }

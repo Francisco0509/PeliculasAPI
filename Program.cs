@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PeliculasAPI;
 using PeliculasAPI.DBContext;
+using PeliculasAPI.Servicios;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +41,11 @@ builder.Services.AddCors(opciones =>
     });
 });
 
+//Servicio para almacenar archivos
+builder.Services.AddTransient<IAlmacenadorArchivos, AlmacenadorArchivosLocal>();
+builder.Services.AddHttpContextAccessor(); //Para obtener la URL del servidor
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -50,6 +56,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles(); //Para poder servir archivos estáticos como las imágenes
 
 app.UseCors();
 
