@@ -9,6 +9,7 @@ using PeliculasAPI.DTOs;
 using PeliculasAPI.Entidades;
 using PeliculasAPI.Servicios;
 using PeliculasAPI.Utilidades;
+using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 
 namespace PeliculasAPI.Controllers
@@ -44,6 +45,14 @@ namespace PeliculasAPI.Controllers
         public async Task<ActionResult<ActorDTO>> Get(int id)
         {
             return await Get<Actor, ActorDTO>(id);
+        }
+
+        [HttpGet("{nombre}")]
+        public async Task<ActionResult<List<PeliculaActorDTO>>> Get(string nombre)
+        {
+            return await _context.Actores.Where(a => a.Nombre.Contains(nombre))
+                .ProjectTo<PeliculaActorDTO>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         [HttpPost]
