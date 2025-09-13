@@ -28,6 +28,26 @@ namespace PeliculasAPI.Utilidades
                 new PeliculaActor { ActorId = actor.Id, Personaje = actor.Personaje })));
 
             CreateMap<Pelicula, PeliculaDTO>();
+
+            CreateMap<Pelicula, PeliculaDetallesDTO>()
+                .ForMember(p => p.Generos, entidad => entidad.MapFrom(p => p.PeliculasGeneros))
+                .ForMember(p => p.Cines, entidad => entidad.MapFrom(p => p.PeliculasCines))
+                .ForMember(p => p.Actores, entidad => entidad.MapFrom(p => p.PeliculasActores.OrderBy(o => o.Orden)));
+
+            CreateMap<PeliculaGenero, GeneroDTO>()
+                .ForMember(g => g.Id, pg => pg.MapFrom(p => p.GeneroId))
+                .ForMember(g => g.Nombre, pg => pg.MapFrom(p => p.Genero!.Nombre));
+
+            CreateMap<PeliculaCine, CineDTO>()
+                .ForMember(c => c.Id, pc => pc.MapFrom(p => p.CineId))
+                .ForMember(c => c.Nombre, pc => pc.MapFrom(p => p.Cine!.Nombre))
+                .ForMember(c => c.Latitud, pc => pc.MapFrom(p => p.Cine.Ubicacion.Y))
+                .ForMember(c => c.Longitud, pc => pc.MapFrom(p => p.Cine.Ubicacion.X));
+
+            CreateMap<PeliculaActor, PeliculaActorDTO>()
+                .ForMember(dto => dto.Id, entidad => entidad.MapFrom(p => p.ActorId))
+                .ForMember(dto => dto.Nombre, entidad => entidad.MapFrom(p => p.Actor.Nombre))
+                .ForMember(dto => dto.Foto, entidad => entidad.MapFrom(p => p.Actor.Foto));
         }
 
         private void ConfigurarMapeoCines(GeometryFactory geometryFactory)
