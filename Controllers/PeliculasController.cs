@@ -9,6 +9,7 @@ using PeliculasAPI.DBContext;
 using PeliculasAPI.DTOs;
 using PeliculasAPI.Entidades;
 using PeliculasAPI.Servicios;
+using PeliculasAPI.Utilidades;
 
 namespace PeliculasAPI.Controllers
 {
@@ -74,6 +75,42 @@ namespace PeliculasAPI.Controllers
             }
 
             return pelicula;
+        }
+
+
+        [HttpGet("filtrar")]
+        public async Task<ActionResult<List<PeliculaDTO>>> Filtrar([FromQuery] PeliculasFiltrarDTO filtroPeliculasDTO)
+        {
+            var peliculasQueryable = _context.Peliculas.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(filtroPeliculasDTO.Titulo))
+            {
+                peliculasQueryable = peliculasQueryable.Where(p => p.Titulo.Contains(filtroPeliculasDTO.Titulo));
+            }
+
+            if (filtroPeliculasDTO.EnCines)
+            { 
+                peliculasQueryable = peliculasQueryable.Where(p => p.PeliculasCines.Select(pc => pc.PeliculaId).Contains(p.Id));
+            }
+
+            if(filtroPeliculasDTO.ProximosEstrenos)
+            {
+                var hoy = DateTime.Today;
+                peliculasQueryable = peliculasQueryable.Where(p => p.FechaLanzamiento > hoy);
+            }
+
+            if(filtroPeliculasDTO.GeneroId != 0)
+            {
+                peliculasQueryable = peliculasQueryable.Where(p => p.PeliculasGeneros.Select(pg => pg.GeneroId).Contains(filtroPeliculasDTO.GeneroId));
+            }
+
+            await HttpContext.InsertarParametrosPaginacionEnCabecera(peliculasQueryable); //Insertar en la cabecera la cantidad total de registros
+
+            var peliculas = await peliculasQueryable
+                .Paginar(filtroPeliculasDTO.Paginacion)
+                .ProjectTo<PeliculaDTO>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return peliculas;
         }
 
 
