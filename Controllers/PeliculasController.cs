@@ -82,6 +82,7 @@ namespace PeliculasAPI.Controllers
         public async Task<ActionResult<List<PeliculaDTO>>> Filtrar([FromQuery] PeliculasFiltrarDTO filtroPeliculasDTO)
         {
             var peliculasQueryable = _context.Peliculas.AsQueryable();
+            var hoy = DateTime.Today;
             if (!string.IsNullOrWhiteSpace(filtroPeliculasDTO.Titulo))
             {
                 peliculasQueryable = peliculasQueryable.Where(p => p.Titulo.Contains(filtroPeliculasDTO.Titulo));
@@ -89,12 +90,12 @@ namespace PeliculasAPI.Controllers
 
             if (filtroPeliculasDTO.EnCines)
             { 
-                peliculasQueryable = peliculasQueryable.Where(p => p.PeliculasCines.Select(pc => pc.PeliculaId).Contains(p.Id));
+                peliculasQueryable = peliculasQueryable.Where(p => p.FechaLanzamiento < hoy && p.PeliculasCines.Select(pc => pc.PeliculaId).Contains(p.Id));
             }
 
             if(filtroPeliculasDTO.ProximosEstrenos)
             {
-                var hoy = DateTime.Today;
+                
                 peliculasQueryable = peliculasQueryable.Where(p => p.FechaLanzamiento > hoy);
             }
 

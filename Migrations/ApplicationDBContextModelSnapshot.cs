@@ -45,7 +45,7 @@ namespace PeliculasAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Actores");
+                    b.ToTable("Actores", (string)null);
                 });
 
             modelBuilder.Entity("PeliculasAPI.Entidades.Cine", b =>
@@ -67,7 +67,7 @@ namespace PeliculasAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Cines");
+                    b.ToTable("Cines", (string)null);
                 });
 
             modelBuilder.Entity("PeliculasAPI.Entidades.Genero", b =>
@@ -85,7 +85,7 @@ namespace PeliculasAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Generos");
+                    b.ToTable("Generos", (string)null);
                 });
 
             modelBuilder.Entity("PeliculasAPI.Entidades.Pelicula", b =>
@@ -113,7 +113,7 @@ namespace PeliculasAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Peliculas");
+                    b.ToTable("Peliculas", (string)null);
                 });
 
             modelBuilder.Entity("PeliculasAPI.Entidades.PeliculaActor", b =>
@@ -136,7 +136,7 @@ namespace PeliculasAPI.Migrations
 
                     b.HasIndex("ActorId");
 
-                    b.ToTable("PeliculasActores");
+                    b.ToTable("PeliculasActores", (string)null);
                 });
 
             modelBuilder.Entity("PeliculasAPI.Entidades.PeliculaCine", b =>
@@ -151,7 +151,7 @@ namespace PeliculasAPI.Migrations
 
                     b.HasIndex("CineId");
 
-                    b.ToTable("PeliculasCines");
+                    b.ToTable("PeliculasCines", (string)null);
                 });
 
             modelBuilder.Entity("PeliculasAPI.Entidades.PeliculaGenero", b =>
@@ -166,7 +166,7 @@ namespace PeliculasAPI.Migrations
 
                     b.HasIndex("GeneroId");
 
-                    b.ToTable("PeliculasGeneros");
+                    b.ToTable("PeliculasGeneros", (string)null);
                 });
 
             modelBuilder.Entity("PeliculasAPI.Entidades.PeliculaActor", b =>
