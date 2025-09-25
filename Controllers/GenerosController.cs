@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +17,7 @@ namespace PeliculasAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "esadmin")]
     public class GenerosController : CustomBaseController
     {
         private readonly IOutputCacheStore _outputCacheStore;
@@ -35,14 +38,15 @@ namespace PeliculasAPI.Controllers
         [HttpGet] // api/generos
         //[HttpGet("listado")] // api/generos/istado
         //[HttpGet("/listado-generos")] // listado-generos
-        [OutputCache(Tags = [cacheTag])]
+        [OutputCache(Tags = [cacheTag], PolicyName = nameof(PoliticaCacheSinAutorizacion))]
         public async Task<List<GeneroDTO>> Get([FromQuery] PaginacionDTO paginacion)
         {
             return await Get<Genero, GeneroDTO>(paginacion, ordenarPor: g => g.Nombre);
         }
 
         [HttpGet("todos")]
-        [OutputCache(Tags = [cacheTag])]
+        [OutputCache(Tags = [cacheTag], PolicyName = nameof(PoliticaCacheSinAutorizacion))]
+        [AllowAnonymous]
         public async Task<List<GeneroDTO>> Get()
         { 
             return await Get<Genero, GeneroDTO>(ordenarPor: g  => g.Nombre);
@@ -50,7 +54,7 @@ namespace PeliculasAPI.Controllers
 
 
         [HttpGet("{id:int}", Name = "ObtenerGeneroPorId")]
-        [OutputCache(Tags = [cacheTag])]
+        [OutputCache(Tags = [cacheTag], PolicyName = nameof(PoliticaCacheSinAutorizacion))]
         public async Task<ActionResult<GeneroDTO>> Get(int id)
         {
             return await Get<Genero, GeneroDTO>(id);

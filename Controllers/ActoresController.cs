@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
@@ -16,6 +18,7 @@ namespace PeliculasAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "esadmin" )]
     public class ActoresController : CustomBaseController
     {
         private readonly ApplicationDBContext _context;
@@ -33,7 +36,7 @@ namespace PeliculasAPI.Controllers
         }
 
         [HttpGet]
-        [OutputCache(Tags = [cacheTag])]
+        [OutputCache(Tags = [cacheTag], PolicyName = nameof(PoliticaCacheSinAutorizacion))]
         public async Task<List<ActorDTO>> Get([FromQuery] PaginacionDTO paginacion)
         {
             return await Get<Actor, ActorDTO>(paginacion, ordenarPor: a => a.Nombre);
@@ -41,7 +44,7 @@ namespace PeliculasAPI.Controllers
 
 
         [HttpGet("{id:int}", Name = "ObtenerActorPorId")]
-        [OutputCache(Tags = [cacheTag])]
+        [OutputCache(Tags = [cacheTag], PolicyName = nameof(PoliticaCacheSinAutorizacion))]
         public async Task<ActionResult<ActorDTO>> Get(int id)
         {
             return await Get<Actor, ActorDTO>(id);

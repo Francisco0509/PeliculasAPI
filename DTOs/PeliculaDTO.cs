@@ -12,5 +12,7 @@ namespace PeliculasAPI.DTOs
         public DateTime FechaLanzamiento { get; set; }
         [Unicode(false)]
         public string? Poster { get; set; }
+        public double PromedioVoto { get; set; }
+        public int UsuarioVoto { get; set; }
     }
 }

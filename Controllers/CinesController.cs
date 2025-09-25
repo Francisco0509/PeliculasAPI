@@ -1,15 +1,19 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using PeliculasAPI.DBContext;
 using PeliculasAPI.DTOs;
 using PeliculasAPI.Entidades;
+using PeliculasAPI.Utilidades;
 
 namespace PeliculasAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "esadmin")]
     public class CinesController : CustomBaseController
     {
         private readonly ApplicationDBContext context;
@@ -27,14 +31,14 @@ namespace PeliculasAPI.Controllers
         }
 
         [HttpGet]
-        [OutputCache(Tags = [cacheTag])]
+        [OutputCache(Tags = [cacheTag], PolicyName = nameof(PoliticaCacheSinAutorizacion))]
         public async Task<List<CineDTO>> Get([FromQuery] PaginacionDTO paginacionDTO)
         {
             return await Get<Cine, CineDTO>(paginacionDTO, ordenarPor: c => c.Nombre);
         }
 
         [HttpGet("{id:int}", Name = "ObtenerCinePorId")]
-        [OutputCache(Tags = [cacheTag])]
+        [OutputCache(Tags = [cacheTag], PolicyName = nameof(PoliticaCacheSinAutorizacion))]
         public async Task<ActionResult<CineDTO>> Get(int id)
         {
             return await Get<Cine, CineDTO>(id);

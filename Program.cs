@@ -1,12 +1,15 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using NetTopologySuite;
 using NetTopologySuite.Geometries;
 using PeliculasAPI;
 using PeliculasAPI.DBContext;
 using PeliculasAPI.Servicios;
 using PeliculasAPI.Utilidades;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +27,38 @@ builder.Services.AddSingleton(proveedor => new MapperConfiguration(config =>
 }).CreateMapper());
 //builder.Services.AddAutoMapper(typeof(Program)); revisar por que no funciona esta línea
 
+//Configuramos Identity
+builder.Services.AddIdentityCore<IdentityUser>()
+    .AddEntityFrameworkStores<ApplicationDBContext>()
+    .AddDefaultTokenProviders();
+
+//Para poder crear usuarios con identity
+builder.Services.AddScoped<UserManager<IdentityUser>>();
+
+//Para poder autenticar usuarios(login)
+builder.Services.AddScoped<SignInManager<IdentityUser>>();
+
+//Agregar autenticación con JWT
+builder.Services.AddAuthentication().AddJwtBearer(opciones =>
+{
+    opciones.MapInboundClaims = false; //Para  que no mapee los claims de Microsoft a los nuestros, por que cambia los nombres de los claims
+    opciones.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    {
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["llavejwt"]!)),
+        ClockSkew = TimeSpan.Zero //Para que el token caduque exactamente en el tiempo que se especifica, sin tiempo de tolerancia
+    };
+});
+
+//Política para que solo usuarios admin puedan crear/modificar/borrar recursos
+builder.Services.AddAuthorization(opciones =>
+{ 
+    opciones.AddPolicy("esadmin", politica => politica.RequireClaim("esadmin"));
+});
+
 //Configuramos el Db Context
 builder.Services.AddDbContext<ApplicationDBContext>(opciones =>
 {
@@ -37,6 +72,7 @@ builder.Services.AddSingleton<GeometryFactory>(NtsGeometryServices.Instance.Crea
 builder.Services.AddOutputCache(opciones =>
 {
     opciones.DefaultExpirationTimeSpan = TimeSpan.FromSeconds(60); //El tiempo en que va a estar activo el cache
+    opciones.AddPolicy(nameof(PoliticaCacheSinAutorizacion), PoliticaCacheSinAutorizacion.Instance));
 });
 
 //Habilitar CORS
@@ -54,6 +90,7 @@ builder.Services.AddCors(opciones =>
 //Servicio para almacenar archivos
 builder.Services.AddTransient<IAlmacenadorArchivos, AlmacenadorArchivosLocal>();
 builder.Services.AddHttpContextAccessor(); //Para obtener la URL del servidor
+builder.Services.AddTransient<IServicioUsuarios, ServicioUsuarios>();
 
 
 var app = builder.Build();
